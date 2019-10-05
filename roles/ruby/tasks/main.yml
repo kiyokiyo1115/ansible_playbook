@@ -1,0 +1,62 @@
+---
+- name: Install packages
+  become: yes
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - git-core
+      - gcc
+      - gcc-c++
+      - gdbm-devel
+      - libffi-devel
+      - libselinux-python
+      - libyaml-devel
+      - ncurses-devel
+      - openssl-devel
+      - sqlite-devel
+      - readline-devel
+      - zlib-devel
+
+- name: Install rbenv
+  git:
+    repo: https://github.com/sstephenson/rbenv.git
+    dest: /usr/local/rbenv
+
+- name: Edit bashrc
+  template:
+    src: roles/ruby/templates/rbenv_system.sh.j2
+    dest: /etc/profile.d/rbenv.sh
+
+- name: Copy .gemrc to ~/.gemrc to Avoid to Install rb-docs
+  become: yes
+  copy: 
+    src: .gemrc
+    dest: ~/.gemrc
+
+- name: Install ruby-build as rbenv Plugin
+  git:
+    repo: https://github.com/sstephenson/ruby-build.git
+    dest: /usr/local/rbenv/plugins/ruby-build
+
+- name: Check the Ruby Version Installed
+  shell: rbenv versions | grep "{{ ruby_version }}" | tr '*' ' ' | sed -e 's/\s\+//' | cut -f1 -d' '
+  register: installed_ruby
+
+- name: Install Ruby
+  shell: bash -lc "RUBY_CONFIGURE_OPTS="--disable-install-rdoc" rbenv install -s {{ ruby_version }}"
+
+- name: Check Ruby Version
+  shell: bash -lc "rbenv version" | grep "{{ ruby_version }}" | cut -f1 -d' '
+  register: current_ruby_version
+
+- name: Set default Ruby version
+  shell: bash -lc "rbenv global {{ ruby_version }} && rbenv rehash"
+  when: ruby_version not in current_ruby_version.stdout
+
+- name: Install bundler and so on
+  shell: bash -lc "gem install {{ item }}"
+  with_items:
+    - rbenv-rehash
+    - bundler -v {{ bundler_version }}
+    - rails

@@ -1,0 +1,2 @@
+[production]
+3.115.62.61 ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/aws-study.pem

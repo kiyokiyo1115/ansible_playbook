@@ -1,0 +1,8 @@
+---
+- name: install postgresql
+  yum:
+    name:
+      - postgresql-server
+      - postgresql-devel
+      - postgresql-contrib
+  become: yes
